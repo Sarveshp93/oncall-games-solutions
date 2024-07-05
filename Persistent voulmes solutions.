@@ -1,0 +1,94 @@
+Persistent voulmes solutions.
+
+Step 1
+
+Kubectl doesn't have a create function for PersistentVolumes. To find a starting point, use something from the K8s docs and adjust it for the requirements.
+
+One such example is here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-persistentvolume
+
+kubectl apply -f - <<EOF
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: cool-volume #changed
+  namespace: default #added
+  labels:
+    type: local
+spec:
+  storageClassName: manual #make sure to include
+  capacity:
+    storage: 100Mi #changed
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/tmp/my-cool-vol" #changed
+
+EOF
+
+Step 2
+
+A good starting point: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-persistentvolumeclaim
+
+kubectl apply -f - <<EOF
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-claim #changed
+spec:
+  storageClassName: manual #important
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi #changed
+
+EOF
+
+
+Step 3
+
+A good starting example: https://kubernetes.io/docs/tasks/configure-pod-container/configure-persistent-volume-storage/#create-a-pod
+
+kubectl apply -f - <<EOF
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pvc-user
+spec:
+  volumes:
+    - name: my-claim
+      persistentVolumeClaim:
+        claimName: my-claim
+  containers:
+    - name: c1
+      image: nginx
+      volumeMounts:
+        - mountPath: "/mnt/share/my-pvc"
+          name: my-claim
+
+EOF
+
+
+
+Step 4
+
+k exec pvc-user -- touch /mnt/share/my-pvc/coolfile
+k get pod pvc-user -o yaml | kubectl replace -f - --force
+
+sleep 5 # Wait for the pod to come back
+
+k exec pvc-user -- ls /mnt/share/my-pvc
+
+
+Step 5
+
+k delete pod pvc-user
+k delete pvc my-claim
+k delete pv cool-volume
+
+Did K8s Clean up the volume?
+
+No. By default, if you don't specify a `persistentVolumeReclaimPolicy` K8s defaults to Retain. Better safe than sorry!

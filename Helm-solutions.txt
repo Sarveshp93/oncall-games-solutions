@@ -1,0 +1,40 @@
+Helm-solutions
+
+
+Condition deployment
+
+
+Step 2
+Update hpa.yaml template by adding the condition
+
+
+{{- if eq .Values.environment "prod" }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+.
+.
+.
+{{- end }}
+
+Deploy
+
+helm -n prod-ns upgrade --install mock-app-prod /charts/mock-app/. --set environment=prod
+helm -n dev-ns upgrade --install mock-app-dev /charts/mock-app/. --set environment=dev
+
+
+
+Override values.
+
+Step 2
+
+helm upgrade -h
+
+helm -n dev-ns upgrade mock-app /charts/mock-app-1.0.0.tgz --set message="You are overriding the message using an inline value. Good job!"
+
+
+Step 3
+
+helm upgrade -h
+
+echo "message: You are overriding the message using a values file. You rock it!" >> /charts/values.yaml
+helm -n dev-ns upgrade mock-app /charts/mock-app-1.0.0.tgz --values /charts/values.yaml

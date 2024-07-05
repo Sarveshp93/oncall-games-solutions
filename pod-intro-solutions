@@ -1,0 +1,8 @@
+pod-intro-solutions
+
+
+Step 1
+k run my-pod --image=nginx:alpine
+
+Step2
+k delete pod my-pod
